@@ -5,11 +5,11 @@ a one click of Infrastructure as Code
 
 
 ## Features
-
-- Multiple Environment IaC
-- Mono Repos
+- Infrastructure As Code
+- Multiple Environment IaC eg.dev,test,stg,prod
 - Terraform with pipelines
-
+- Infrastructure State Consistent
+- simple setup
 
 ## Installation
 
