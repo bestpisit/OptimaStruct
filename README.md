@@ -15,4 +15,4 @@ a one click of Infrastructure as Code
 
 - see the document
 
-[OptimaStruct Documentation](https://bestengineer.atlassian.net/l/cp/iGbAVW04 "Google's Homepage")
+[OptimaStruct Documentation]([https://bestengineer.atlassian.net/l/cp/iGbAVW04](https://drive.google.com/file/d/1IQYLueX60B1-sD6XRF1AQBuWepQmv8Yb/view?usp=sharing) "Google's Homepage")
