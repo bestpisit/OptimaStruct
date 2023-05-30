@@ -1,5 +1,5 @@
 variables:
-- group: terraform-__pname__-__env__
+- group: terraform-isne-test
 - name: $projectname
   value: '$(projectname)'
 - name: $environment
@@ -10,7 +10,7 @@ variables:
 trigger:
   branches:
     include:
-      - __branchName__
+      - isne-lighthouse-test
   paths:
     include:
       - terraform/*
