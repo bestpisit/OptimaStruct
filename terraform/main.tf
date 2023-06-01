@@ -1,11 +1,3 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "=3.0.0"
-    }
-  }
-}
 
 provider "azurerm" {
   features {}
@@ -14,116 +6,233 @@ provider "azurerm" {
 module "configuration" {
   source = "./configuration"
 
-  project-name = "__projectname__"
-  environment = "__environment__"
-  rgname = "__rgterraform__"
+  project = "nexidia"
+  environment = "dev"
+  location = "Southeast asia"
 }
 
-module "vnet" {
+module "resource-group" {
+  source = "./modules/resource-group"
+
+  resource-group-name     = "rg-${module.configuration.project}-${module.configuration.environment}"
+  resource-group-location = module.configuration.location
+}
+
+module "vnet-public"{
   source = "./modules/virtual-network"
 
-  virturl-network-name    = "vnet-${module.configuration.project-name}-${module.configuration.environment}"
-  resource-group-name     = module.configuration.rgname
-  resource-group-location = module.configuration.location
+  virtual-network-name    = "vnet-public-${module.configuration.project}-${module.configuration.environment}"
+  resource-group-name     = module.resource-group.name
+  resource-group-location = module.resource-group.location
   address-space           = "10.0.0.0/16"
 }
 
-module "asn-public" {
-  source = "./modules/subnet-public"
+module "subnet-public-jumpbox" {
+  source = "./modules/subnet"
 
-  subnet-name          = "snet-${module.configuration.project-name}-public-${module.configuration.environment}"
-  resource-group-name  = module.configuration.rgname
-  virtual-network-name = module.vnet.name
-  address-prefixes     = "10.0.1.0/24"
-  delegation-name      = "AppServiceDelegationPublic"
-  service-delegation-name = "Microsoft.Web/serverFarms"
-  actions = "Microsoft.Network/virtualNetworks/subnets/action"
+  resource-group-name = module.resource-group.name
+  virtual-network-name= module.vnet-public.name
+  subnet-name         = "snet-public-jumpbox-${module.configuration.project}-${module.configuration.environment}"
+  address-prefixes    = "10.0.0.0/24"
 }
 
-module "asn-private" {
-  source = "./modules/subnet-private"
+module "nsg-vnet-public-jumpbox" {
+  source = "./modules/network-security-group"
 
-  subnet-name          = "snet-${module.configuration.project-name}-private-${module.configuration.environment}"
-  resource-group-name  = module.configuration.rgname
-  virtual-network-name = module.vnet.name
-  address-prefixes     = "10.0.2.0/24"
-  delegation-name      = "AppServiceDelegation"
-  service-delegation-name = "Microsoft.Web/serverFarms"
-  actions = "Microsoft.Network/virtualNetworks/subnets/action"
+  nsg-name                   = "nsg-vnet-public-jumpbox-${module.configuration.project}-${module.configuration.environment}"
+  resource-group-name        = module.resource-group.name
+  resource-group-location    = module.resource-group.location
+  
+  security_rules = [
+    {
+      name                       = "allowpublicssh"
+      priority                   = 100
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = "22"
+      source_address_prefix      = "49.0.0.0/8"
+      destination_address_prefix = "*"
+    },
+    {
+      name                       = "DenyAll"
+      priority                   = 300
+      direction                  = "Inbound"
+      access                     = "Deny"
+      protocol                   = "*"
+      source_port_range          = "*"
+      destination_port_range     = "*"
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    }
+  ]
 }
 
-locals {
-  backend_address_pool_name      = "${module.vnet.name}-beap"
-  frontend_port_name             = "${module.vnet.name}-feport"
-  frontend_ip_configuration_name = "${module.vnet.name}-feip"
-  http_setting_name              = "${module.vnet.name}-be-htst"
-  listener_name                  = "${module.vnet.name}-httplstn"
-  request_routing_rule_name      = "${module.vnet.name}-rqrt"
+module "nsg-associate-public-jumpbox" {
+  source = "./modules/nsg-associate"
+
+  network-security-group-id = module.nsg-vnet-public-jumpbox.id
+  subnet-id                 = module.subnet-public-jumpbox.id
 }
 
-module "container-registry" {
-  source = "./modules/container-registry"
+module "vnet-private"{
+  source = "./modules/virtual-network"
 
-  container-name          = "__acrname__"
-  resource-group-name     = module.configuration.rgname
-  resource-group-location = module.configuration.location
-  container-sku-name      = "Standard"
+  virtual-network-name    = "vnet-private-${module.configuration.project}-${module.configuration.environment}"
+  resource-group-name     = module.resource-group.name
+  resource-group-location = module.resource-group.location
+  address-space           = "10.1.0.0/16"
 }
 
-module "service-plan" {
-  source = "./modules/service-plan"
+module "subnet-private-adsync" {
+  source = "./modules/subnet"
 
-  service-plan-name       = "asp-${module.configuration.project-name}-${module.configuration.environment}"
-  service-plan-os_type    = "Linux"
-  service-plan-sku_name   = "B3"
-  resource-group-name     = module.configuration.rgname
-  resource-group-location = module.configuration.location
+  resource-group-name = module.resource-group.name
+  virtual-network-name= module.vnet-private.name
+  subnet-name         = "snet-private-adsync-${module.configuration.project}-${module.configuration.environment}"
+  address-prefixes    = "10.1.0.0/24"
 }
 
-module "webapp" {
-  source = "./modules/webapp"
+module "subnet-private-node" {
+  source = "./modules/subnet"
 
-  webapp-name             = "ase-app-${module.configuration.project-name}-${module.configuration.environment}"
-  resource-group-name     = module.configuration.rgname
-  resource-group-location = module.configuration.location
-  service-plan-id         = module.service-plan.id
-  acr-name                = module.container-registry.name
-  image-tag               = "app"
-  admin_username          = module.container-registry.admin_username
-  admin_password          = module.container-registry.admin_password
+  resource-group-name = module.resource-group.name
+  virtual-network-name= module.vnet-private.name
+  subnet-name         = "snet-private-node-${module.configuration.project}-${module.configuration.environment}"
+  address-prefixes    = "10.1.1.0/24"
 }
 
-module "webapi" {
-  source = "./modules/webapi"
+module "nsg-vnet-private-adsync" {
+  source = "./modules/network-security-group"
 
-  webapp-name             = "ase-api-${module.configuration.project-name}-${module.configuration.environment}"
-  resource-group-name     = module.configuration.rgname
-  resource-group-location = module.configuration.location
-  service-plan-id         = module.service-plan.id
-  acr-name                = module.container-registry.name
-  image-tag               = "api"
-  subnet-id               = module.asn-private.id
-  allow-vnet              = module.asn-private.id
-  admin_username          = module.container-registry.admin_username
-  admin_password          = module.container-registry.admin_password
+  nsg-name                   = "nsg-vnet-private-adsync-${module.configuration.project}-${module.configuration.environment}"
+  resource-group-name        = module.resource-group.name
+  resource-group-location    = module.resource-group.location
+  
+  security_rules = [
+    {
+      name                       = "allowjumpboxssh"
+      priority                   = 100
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = "22"
+      source_address_prefix      = "10.0.0.4/32"
+      destination_address_prefix = "*"
+    },
+    {
+      name                       = "DenyAll"
+      priority                   = 300
+      direction                  = "Inbound"
+      access                     = "Deny"
+      protocol                   = "*"
+      source_port_range          = "*"
+      destination_port_range     = "*"
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    }
+  ]
 }
 
-module "webhook-api" {
-  source = "./modules/webhook"
+module "nsg-associate-private-adsync" {
+  source = "./modules/nsg-associate"
 
-  registry-name = module.container-registry.name
-  name = "webhook${module.configuration.project-name}api${module.configuration.environment}"
-  location = module.configuration.location
-  service-uri = module.webapi.webhook-uri
-  rg-name = module.configuration.rgname
+  network-security-group-id = module.nsg-vnet-private-adsync.id
+  subnet-id                 = module.subnet-private-adsync.id
 }
 
-module "webhook-app" {
-  source = "./modules/webhook"
+module "nsg-vnet-private-node" {
+  source = "./modules/network-security-group"
 
-  registry-name = module.container-registry.name
-  name = "webhook${module.configuration.project-name}app${module.configuration.environment}"
-  location = module.configuration.location
-  service-uri = module.webapp.webhook-uri
-  rg-name = module.configuration.rgname
+  nsg-name                   = "nsg-vnet-private-node-${module.configuration.project}-${module.configuration.environment}"
+  resource-group-name        = module.resource-group.name
+  resource-group-location    = module.resource-group.location
+  
+  security_rules = [
+    {
+      name                       = "allowadsyncssh"
+      priority                   = 100
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = "22"
+      source_address_prefix      = "10.1.0.0/24"
+      destination_address_prefix = "*"
+    },
+    {
+      name                       = "DenyAll"
+      priority                   = 300
+      direction                  = "Inbound"
+      access                     = "Deny"
+      protocol                   = "*"
+      source_port_range          = "*"
+      destination_port_range     = "*"
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    }
+  ]
+}
+
+module "nsg-associate-private-node" {
+  source = "./modules/nsg-associate"
+
+  network-security-group-id = module.nsg-vnet-private-node.id
+  subnet-id                 = module.subnet-private-node.id
+}
+
+module "vm-jumpbox" {
+    source = "./modules/virtual-machine"
+    name = "vm-jumpbox-${module.configuration.project}-${module.configuration.environment}"
+    location = module.resource-group.location
+    resource-group-name = module.resource-group.name
+    nic-id = module.nic-public-jumpbox.nic_id
+    admin-username = "bestengineer"
+    admin-password = "Intern100%"
+}
+
+module "nic-public-jumpbox" {
+    source = "./modules/network-interface"
+    location            = module.resource-group.location
+    resource_group_name = module.resource-group.name
+    subnet_id           = module.subnet-public-jumpbox.id
+    name                = "nic-public-jumpbox-${module.configuration.project}-${module.configuration.environment}"
+}
+
+module "vm-adsync" {
+    source = "./modules/virtual-machine"
+    name = "vm-adsync-${module.configuration.project}-${module.configuration.environment}"
+    location = module.resource-group.location
+    resource-group-name = module.resource-group.name
+    nic-id = module.nic-private-adsync.nic_id
+    admin-username = "bestengineer"
+    admin-password = "Intern100%"
+}
+
+module "nic-private-adsync" {
+    source = "./modules/network-interface"
+    location            = module.resource-group.location
+    resource_group_name = module.resource-group.name
+    subnet_id           = module.subnet-private-adsync.id
+    name                = "nic-private-adsync-${module.configuration.project}-${module.configuration.environment}"
+}
+
+module "vm-node" {
+    source = "./modules/virtual-machine"
+    name = "vm-node-${module.configuration.project}-${module.configuration.environment}"
+    location = module.resource-group.location
+    resource-group-name = module.resource-group.name
+    nic-id = module.nic-private-node.nic_id
+    admin-username = "bestengineer"
+    admin-password = "Intern100%"
+}
+
+module "nic-private-node" {
+    source = "./modules/network-interface"
+    location            = module.resource-group.location
+    resource_group_name = module.resource-group.name
+    subnet_id           = module.subnet-private-node.id
+    name                = "nic-private-node-${module.configuration.project}-${module.configuration.environment}"
 }

@@ -1,5 +1,5 @@
-output "project-name" {
-    value = var.project-name
+output "project" {
+    value = var.project
 }
 
 output "environment" {
@@ -8,8 +8,4 @@ output "environment" {
 
 output "location" {
     value = var.location
-}
-
-output "rgname" {
-    value = var.rgname
 }

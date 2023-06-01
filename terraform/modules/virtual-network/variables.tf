@@ -6,7 +6,7 @@ variable "resource-group-location" {
   type = string
 }
 
-variable "virturl-network-name" {
+variable "virtual-network-name" {
   type = string
 }
 

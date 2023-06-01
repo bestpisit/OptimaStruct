@@ -13,15 +13,3 @@ variable "subnet-name" {
 variable "address-prefixes" {
   type = string
 }
-
-variable "delegation-name" {
-  type = string
-}
-
-variable "service-delegation-name" {
-  type = string
-}
-
-variable "actions" {
-  type = string
-}

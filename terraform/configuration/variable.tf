@@ -1,4 +1,4 @@
-variable "project-name" {
+variable "project" {
     type = string
 }
 variable "environment" {
@@ -7,7 +7,4 @@ variable "environment" {
 variable "location" {
     type = string
     default = "Southeast asia"
-}
-variable "rgname" {
-    type = string
 }

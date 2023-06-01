@@ -10,38 +10,17 @@ variable "nsg-name" {
   type = string
 }
 
-variable "sr-name" {
-  type = string
-}
-
-variable "priority" {
-  type = string
-}
-
-variable "direction" {
-  type = string
-}
-
-variable "access" {
-  type = string
-}
-
-variable "protocol" {
-  type = string
-}
-
-variable "source-port-range" {
-  type = string
-}
-
-variable "destination-port-range" {
-  type = string
-}
-
-variable "source-address-prefix" {
-  type = string
-}
-
-variable "destination-address-prefix" {
-  type = string
+variable "security_rules" {
+  type    = list(object({
+    name                       = string
+    priority                   = number
+    direction                  = string
+    access                     = string
+    protocol                   = string
+    source_port_range          = string
+    destination_port_range     = string
+    source_address_prefix      = string
+    destination_address_prefix = string
+  }))
+  default = []
 }
