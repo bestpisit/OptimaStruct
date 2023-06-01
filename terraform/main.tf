@@ -19,7 +19,7 @@ module "vnet-public"{
 
   virtual-network-name    = "vnet-public-${var.project}-${var.environment}"
   resource-group-name     = module.resource-group.name
-  resource-group-location = module.resource-group.location
+  resource-group-location = var.location
   address-space           = "10.1.0.0/16"
 }
 
@@ -37,7 +37,7 @@ module "nsg-vnet-public-jumpbox" {
 
   nsg-name                   = "nsg-vnet-public-jumpbox-${var.project}-${var.environment}"
   resource-group-name        = module.resource-group.name
-  resource-group-location    = module.resource-group.location
+  resource-group-location    = module.vnet-public.location
   
   security_rules = [
     {
@@ -77,7 +77,7 @@ module "vnet-private"{
 
   virtual-network-name    = "vnet-private-${var.project}-${var.environment}"
   resource-group-name     = module.resource-group.name
-  resource-group-location = module.resource-group.location
+  resource-group-location = var.location2
   address-space           = "10.2.0.0/16"
 }
 
@@ -104,7 +104,7 @@ module "nsg-vnet-private-adsync" {
 
   nsg-name                   = "nsg-vnet-private-adsync-${var.project}-${var.environment}"
   resource-group-name        = module.resource-group.name
-  resource-group-location    = module.resource-group.location
+  resource-group-location    = module.vnet-private.location
   
   security_rules = [
     {
@@ -144,7 +144,7 @@ module "nsg-vnet-private-node" {
 
   nsg-name                   = "nsg-vnet-private-node-${var.project}-${var.environment}"
   resource-group-name        = module.resource-group.name
-  resource-group-location    = module.resource-group.location
+  resource-group-location    = module.vnet-private.location
   
   security_rules = [
     {
@@ -191,7 +191,7 @@ module "vnet-peer" {
 module "vm-jumpbox" {
     source = "./modules/virtual-machine"
     name = "vm-jumpbox-${var.project}-${var.environment}"
-    location = module.resource-group.location
+    location = module.vnet-public.location
     resource-group-name = module.resource-group.name
     nic-id = module.nic-public-jumpbox.nic_id
     admin-username = "bestengineer"
@@ -200,7 +200,7 @@ module "vm-jumpbox" {
 
 module "nic-public-jumpbox" {
     source = "./modules/network-interface"
-    location            = module.resource-group.location
+    location            = module.vnet-public.location
     resource_group_name = module.resource-group.name
     subnet_id           = module.subnet-public-jumpbox.id
     name                = "nic-public-jumpbox-${var.project}-${var.environment}"
@@ -209,7 +209,7 @@ module "nic-public-jumpbox" {
 module "vm-adsync" {
     source = "./modules/virtual-machine"
     name = "vm-adsync-${var.project}-${var.environment}"
-    location = module.resource-group.location
+    location = module.vnet-private.location
     resource-group-name = module.resource-group.name
     nic-id = module.nic-private-adsync.nic_id
     admin-username = "bestengineer"
@@ -218,7 +218,7 @@ module "vm-adsync" {
 
 module "nic-private-adsync" {
     source = "./modules/network-interface"
-    location            = module.resource-group.location
+    location            = module.vnet-private.location
     resource_group_name = module.resource-group.name
     subnet_id           = module.subnet-private-adsync.id
     name                = "nic-private-adsync-${var.project}-${var.environment}"
@@ -227,7 +227,7 @@ module "nic-private-adsync" {
 module "vm-node" {
     source = "./modules/virtual-machine"
     name = "vm-node-${var.project}-${var.environment}"
-    location = module.resource-group.location
+    location = module.vnet-private.location
     resource-group-name = module.resource-group.name
     nic-id = module.nic-private-node.nic_id
     admin-username = "bestengineer"
@@ -236,7 +236,7 @@ module "vm-node" {
 
 module "nic-private-node" {
     source = "./modules/network-interface"
-    location            = module.resource-group.location
+    location            = module.vnet-private.location
     resource_group_name = module.resource-group.name
     subnet_id           = module.subnet-private-node.id
     name                = "nic-private-node-${var.project}-${var.environment}"
