@@ -49,7 +49,7 @@ module "nsg-vnet-public-jumpbox" {
       protocol                   = "Tcp"
       source_port_range          = "*"
       destination_port_range     = "22"
-      source_address_prefix      = "172.0.0.0/8"
+      source_address_prefix      = "0.0.0.0/0"
       destination_address_prefix = "*"
     },
     {

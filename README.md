@@ -44,27 +44,22 @@ terraform init
 ```
 This command is used to initialize a working directory containing Terraform configuration files.
 
-4. Set the poject configuration
+4. Set the project configuration
 
-terraform/main.tf
+terraform/terraform.tfvars
 ```bash
-module "configuration" {
-  source = "./configuration"
-
-  project-name = "__projectname__"
-  environment = "__environment__"
-  rgname = "__rgterraform__"
-}
+project = "your-desired-project-name"
+environment = "your-project-environment"
+location = "first-project-vm-location"
+location2 = "second-project-vm-location"
 ```
+note*** first and second project vm location must be different based on some Regional vm creation quota limit.
 for example:
 ```bash
-module "configuration" {
-  source = "./configuration"
-
-  project-name = "codingversus"
-  environment = "prod"
-  rgname = "rg-codingversus-prod"
-}
+project = "nexidia"
+environment = "dev"
+location = "southeastasia"
+location2 = "swedencentral"
 ```
 ## Usage
 
