@@ -8,7 +8,7 @@ module "configuration" {
 
   project = "nexidia"
   environment = "dev"
-  location = "Southeast asia"
+  location = "East asia"
 }
 
 module "resource-group" {

@@ -9,6 +9,12 @@ resource "azurerm_linux_virtual_machine" "example" {
   ]
 
   admin_password = var.admin-password
+  disable_password_authentication = false
+
+  admin_ssh_key {
+    username   = var.admin-username
+    public_key = file("./id_rsa.pub.pub")
+  }
 
   os_disk {
     caching              = "ReadWrite"
@@ -18,7 +24,7 @@ resource "azurerm_linux_virtual_machine" "example" {
   source_image_reference {
     publisher = "Canonical"
     offer     = "UbuntuServer"
-    sku       = "20.04-LTS"
+    sku       = "2004"
     version   = "latest"
   }
 }
