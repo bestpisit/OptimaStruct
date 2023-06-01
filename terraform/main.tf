@@ -20,7 +20,7 @@ module "vnet-public"{
   virtual-network-name    = "vnet-public-${var.project}-${var.environment}"
   resource-group-name     = module.resource-group.name
   resource-group-location = module.resource-group.location
-  address-space           = "10.0.0.0/16"
+  address-space           = "10.1.0.0/16"
 }
 
 module "subnet-public-jumpbox" {
@@ -29,7 +29,7 @@ module "subnet-public-jumpbox" {
   resource-group-name = module.resource-group.name
   virtual-network-name= module.vnet-public.name
   subnet-name         = "snet-public-jumpbox-${var.project}-${var.environment}"
-  address-prefixes    = "10.0.0.0/24"
+  address-prefixes    = "10.1.0.0/24"
 }
 
 module "nsg-vnet-public-jumpbox" {
@@ -48,7 +48,7 @@ module "nsg-vnet-public-jumpbox" {
       protocol                   = "Tcp"
       source_port_range          = "*"
       destination_port_range     = "22"
-      source_address_prefix      = "49.0.0.0/8"
+      source_address_prefix      = "0.0.0.0/0"
       destination_address_prefix = "*"
     },
     {
@@ -78,7 +78,7 @@ module "vnet-private"{
   virtual-network-name    = "vnet-private-${var.project}-${var.environment}"
   resource-group-name     = module.resource-group.name
   resource-group-location = module.resource-group.location
-  address-space           = "10.1.0.0/16"
+  address-space           = "10.2.0.0/16"
 }
 
 module "subnet-private-adsync" {
@@ -87,7 +87,7 @@ module "subnet-private-adsync" {
   resource-group-name = module.resource-group.name
   virtual-network-name= module.vnet-private.name
   subnet-name         = "snet-private-adsync-${var.project}-${var.environment}"
-  address-prefixes    = "10.1.0.0/24"
+  address-prefixes    = "10.2.0.0/24"
 }
 
 module "subnet-private-node" {
@@ -96,7 +96,7 @@ module "subnet-private-node" {
   resource-group-name = module.resource-group.name
   virtual-network-name= module.vnet-private.name
   subnet-name         = "snet-private-node-${var.project}-${var.environment}"
-  address-prefixes    = "10.1.1.0/24"
+  address-prefixes    = "10.2.1.0/24"
 }
 
 module "nsg-vnet-private-adsync" {
@@ -115,7 +115,7 @@ module "nsg-vnet-private-adsync" {
       protocol                   = "Tcp"
       source_port_range          = "*"
       destination_port_range     = "22"
-      source_address_prefix      = "10.0.0.4/32"
+      source_address_prefix      = "10.1.0.4/32"
       destination_address_prefix = "*"
     },
     {
@@ -155,7 +155,7 @@ module "nsg-vnet-private-node" {
       protocol                   = "Tcp"
       source_port_range          = "*"
       destination_port_range     = "22"
-      source_address_prefix      = "10.1.0.0/24"
+      source_address_prefix      = "10.2.0.0/24"
       destination_address_prefix = "*"
     },
     {
@@ -177,6 +177,15 @@ module "nsg-associate-private-node" {
 
   network-security-group-id = module.nsg-vnet-private-node.id
   subnet-id                 = module.subnet-private-node.id
+}
+
+module "vnet-peer" {
+  source = "./modules/vnet-perring"
+
+  name = "vnet-peering-public-private-${var.project}-${var.environment}"
+  resource-group-name = module.resource-group.name
+  vnet-name = module.vnet-public.name
+  vnet-id = module.vnet-private.id
 }
 
 module "vm-jumpbox" {

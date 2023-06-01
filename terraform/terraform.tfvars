@@ -1,3 +1,3 @@
 project = "nexidia"
 environment = "dev"
-location = "West US"
+location = "Sewden Central"
