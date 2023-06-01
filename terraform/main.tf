@@ -3,25 +3,17 @@ provider "azurerm" {
   features {}
 }
 
-module "configuration" {
-  source = "./configuration"
-
-  project = "nexidia"
-  environment = "dev"
-  location = "West US"
-}
-
 module "resource-group" {
   source = "./modules/resource-group"
 
-  resource-group-name     = "rg-${module.configuration.project}-${module.configuration.environment}"
-  resource-group-location = module.configuration.location
+  resource-group-name     = "rg-${var.project}-${var.environment}"
+  resource-group-location = var.location
 }
 
 module "vnet-public"{
   source = "./modules/virtual-network"
 
-  virtual-network-name    = "vnet-public-${module.configuration.project}-${module.configuration.environment}"
+  virtual-network-name    = "vnet-public-${var.project}-${var.environment}"
   resource-group-name     = module.resource-group.name
   resource-group-location = module.resource-group.location
   address-space           = "10.0.0.0/16"
@@ -32,14 +24,14 @@ module "subnet-public-jumpbox" {
 
   resource-group-name = module.resource-group.name
   virtual-network-name= module.vnet-public.name
-  subnet-name         = "snet-public-jumpbox-${module.configuration.project}-${module.configuration.environment}"
+  subnet-name         = "snet-public-jumpbox-${var.project}-${var.environment}"
   address-prefixes    = "10.0.0.0/24"
 }
 
 module "nsg-vnet-public-jumpbox" {
   source = "./modules/network-security-group"
 
-  nsg-name                   = "nsg-vnet-public-jumpbox-${module.configuration.project}-${module.configuration.environment}"
+  nsg-name                   = "nsg-vnet-public-jumpbox-${var.project}-${var.environment}"
   resource-group-name        = module.resource-group.name
   resource-group-location    = module.resource-group.location
   
@@ -79,7 +71,7 @@ module "nsg-associate-public-jumpbox" {
 module "vnet-private"{
   source = "./modules/virtual-network"
 
-  virtual-network-name    = "vnet-private-${module.configuration.project}-${module.configuration.environment}"
+  virtual-network-name    = "vnet-private-${var.project}-${var.environment}"
   resource-group-name     = module.resource-group.name
   resource-group-location = module.resource-group.location
   address-space           = "10.1.0.0/16"
@@ -90,7 +82,7 @@ module "subnet-private-adsync" {
 
   resource-group-name = module.resource-group.name
   virtual-network-name= module.vnet-private.name
-  subnet-name         = "snet-private-adsync-${module.configuration.project}-${module.configuration.environment}"
+  subnet-name         = "snet-private-adsync-${var.project}-${var.environment}"
   address-prefixes    = "10.1.0.0/24"
 }
 
@@ -99,14 +91,14 @@ module "subnet-private-node" {
 
   resource-group-name = module.resource-group.name
   virtual-network-name= module.vnet-private.name
-  subnet-name         = "snet-private-node-${module.configuration.project}-${module.configuration.environment}"
+  subnet-name         = "snet-private-node-${var.project}-${var.environment}"
   address-prefixes    = "10.1.1.0/24"
 }
 
 module "nsg-vnet-private-adsync" {
   source = "./modules/network-security-group"
 
-  nsg-name                   = "nsg-vnet-private-adsync-${module.configuration.project}-${module.configuration.environment}"
+  nsg-name                   = "nsg-vnet-private-adsync-${var.project}-${var.environment}"
   resource-group-name        = module.resource-group.name
   resource-group-location    = module.resource-group.location
   
@@ -146,7 +138,7 @@ module "nsg-associate-private-adsync" {
 module "nsg-vnet-private-node" {
   source = "./modules/network-security-group"
 
-  nsg-name                   = "nsg-vnet-private-node-${module.configuration.project}-${module.configuration.environment}"
+  nsg-name                   = "nsg-vnet-private-node-${var.project}-${var.environment}"
   resource-group-name        = module.resource-group.name
   resource-group-location    = module.resource-group.location
   
@@ -185,7 +177,7 @@ module "nsg-associate-private-node" {
 
 module "vm-jumpbox" {
     source = "./modules/virtual-machine"
-    name = "vm-jumpbox-${module.configuration.project}-${module.configuration.environment}"
+    name = "vm-jumpbox-${var.project}-${var.environment}"
     location = module.resource-group.location
     resource-group-name = module.resource-group.name
     nic-id = module.nic-public-jumpbox.nic_id
@@ -198,12 +190,12 @@ module "nic-public-jumpbox" {
     location            = module.resource-group.location
     resource_group_name = module.resource-group.name
     subnet_id           = module.subnet-public-jumpbox.id
-    name                = "nic-public-jumpbox-${module.configuration.project}-${module.configuration.environment}"
+    name                = "nic-public-jumpbox-${var.project}-${var.environment}"
 }
 
 module "vm-adsync" {
     source = "./modules/virtual-machine"
-    name = "vm-adsync-${module.configuration.project}-${module.configuration.environment}"
+    name = "vm-adsync-${var.project}-${var.environment}"
     location = module.resource-group.location
     resource-group-name = module.resource-group.name
     nic-id = module.nic-private-adsync.nic_id
@@ -216,12 +208,12 @@ module "nic-private-adsync" {
     location            = module.resource-group.location
     resource_group_name = module.resource-group.name
     subnet_id           = module.subnet-private-adsync.id
-    name                = "nic-private-adsync-${module.configuration.project}-${module.configuration.environment}"
+    name                = "nic-private-adsync-${var.project}-${var.environment}"
 }
 
 module "vm-node" {
     source = "./modules/virtual-machine"
-    name = "vm-node-${module.configuration.project}-${module.configuration.environment}"
+    name = "vm-node-${var.project}-${var.environment}"
     location = module.resource-group.location
     resource-group-name = module.resource-group.name
     nic-id = module.nic-private-node.nic_id
@@ -234,5 +226,5 @@ module "nic-private-node" {
     location            = module.resource-group.location
     resource_group_name = module.resource-group.name
     subnet_id           = module.subnet-private-node.id
-    name                = "nic-private-node-${module.configuration.project}-${module.configuration.environment}"
+    name                = "nic-private-node-${var.project}-${var.environment}"
 }
