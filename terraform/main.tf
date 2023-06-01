@@ -21,7 +21,7 @@ module "vnet-public"{
   virtual-network-name    = "vnet-public-${var.project}-${var.environment}"
   resource-group-name     = module.resource-group.name
   resource-group-location = var.location
-  address-space           = "10.1.0.0/16"
+  address-space           = "192.168.1.0/24"
 }
 
 module "subnet-public-jumpbox" {
@@ -30,7 +30,7 @@ module "subnet-public-jumpbox" {
   resource-group-name = module.resource-group.name
   virtual-network-name= module.vnet-public.name
   subnet-name         = "snet-public-jumpbox-${var.project}-${var.environment}"
-  address-prefixes    = "10.1.0.0/24"
+  address-prefixes    = "192.168.1.0/24"
 }
 
 module "nsg-vnet-public-jumpbox" {
@@ -49,7 +49,7 @@ module "nsg-vnet-public-jumpbox" {
       protocol                   = "Tcp"
       source_port_range          = "*"
       destination_port_range     = "22"
-      source_address_prefix      = "0.0.0.0/0"
+      source_address_prefix      = "172.0.0.0/8"
       destination_address_prefix = "*"
     },
     {
@@ -79,7 +79,7 @@ module "vnet-private"{
   virtual-network-name    = "vnet-private-${var.project}-${var.environment}"
   resource-group-name     = module.resource-group.name
   resource-group-location = var.location2
-  address-space           = "10.2.0.0/16"
+  address-space           = "192.168.2.0/24"
 }
 
 module "subnet-private-adsync" {
@@ -88,7 +88,7 @@ module "subnet-private-adsync" {
   resource-group-name = module.resource-group.name
   virtual-network-name= module.vnet-private.name
   subnet-name         = "snet-private-adsync-${var.project}-${var.environment}"
-  address-prefixes    = "10.2.0.0/24"
+  address-prefixes    = "192.168.2.0/25"
 }
 
 module "subnet-private-node" {
@@ -97,7 +97,7 @@ module "subnet-private-node" {
   resource-group-name = module.resource-group.name
   virtual-network-name= module.vnet-private.name
   subnet-name         = "snet-private-node-${var.project}-${var.environment}"
-  address-prefixes    = "10.2.1.0/24"
+  address-prefixes    = "192.168.2.128/25"
 }
 
 module "nsg-vnet-private-adsync" {
@@ -116,7 +116,7 @@ module "nsg-vnet-private-adsync" {
       protocol                   = "Tcp"
       source_port_range          = "*"
       destination_port_range     = "22"
-      source_address_prefix      = "10.1.0.4/32"
+      source_address_prefix      = "192.168.1.0/24"
       destination_address_prefix = "*"
     },
     {
@@ -156,7 +156,7 @@ module "nsg-vnet-private-node" {
       protocol                   = "Tcp"
       source_port_range          = "*"
       destination_port_range     = "22"
-      source_address_prefix      = "10.2.0.0/24"
+      source_address_prefix      = "192.168.2.0/25"
       destination_address_prefix = "*"
     },
     {
@@ -180,13 +180,32 @@ module "nsg-associate-private-node" {
   subnet-id                 = module.subnet-private-node.id
 }
 
-module "vnet-peer" {
+module "vnet-peer-public" {
   source = "./modules/vnet-perring"
 
   name = "vnet-peering-public-private-${var.project}-${var.environment}"
   resource-group-name = module.resource-group.name
   vnet-name = module.vnet-public.name
   vnet-id = module.vnet-private.id
+}
+
+module "vnet-peer-private" {
+  source = "./modules/vnet-perring"
+
+  name = "vnet-peering-private-public-${var.project}-${var.environment}"
+  resource-group-name = module.resource-group.name
+  vnet-name = module.vnet-private.name
+  vnet-id = module.vnet-public.id
+}
+
+module "pip-jumpbox" {
+  source = "./modules/public-ip"
+
+  pip-name                = "pip-jumpbox-${var.project}-${var.environment}"
+  resource-group-name     = module.resource-group.name
+  resource-group-location = module.vnet-public.location
+  allocation-method       = "Static"
+  sku-name                = "Standard"
 }
 
 module "vm-jumpbox" {
@@ -205,6 +224,7 @@ module "nic-public-jumpbox" {
     resource_group_name = module.resource-group.name
     subnet_id           = module.subnet-public-jumpbox.id
     name                = "nic-public-jumpbox-${var.project}-${var.environment}"
+    public-ip-id = module.pip-jumpbox.id
 }
 
 module "vm-adsync" {
