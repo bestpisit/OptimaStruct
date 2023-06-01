@@ -6,6 +6,7 @@ provider "azurerm" {
 variable "project" {}
 variable "environment" {}
 variable "location" {}
+variable "location2" {}
 
 module "resource-group" {
   source = "./modules/resource-group"
