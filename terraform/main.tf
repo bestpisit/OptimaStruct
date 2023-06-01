@@ -3,6 +3,10 @@ provider "azurerm" {
   features {}
 }
 
+variable "project" {}
+variable "environment" {}
+variable "location" {}
+
 module "resource-group" {
   source = "./modules/resource-group"
 
